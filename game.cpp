@@ -49,10 +49,18 @@ Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, std::string player_
             game_space_[k][p]=none_;
         }
     }
+    step_s_player_=first_player_choose();
+    first_step_=step_s_player_;
 }
 
-int Tic_tac_toe::step(int row, int col, char player_char){
-    if(game_space_[row][col]!=none_){
+int Tic_tac_toe::step(int row, int col, bool player_move){
+    char player_char=' ';
+    if(player_move){
+        player_char='O';
+    }else {
+        player_char='X';
+    }
+    if(row<0 || col<0 || game_space_[row][col]!=none_){
         return 0;//занятое поле
     }
     game_space_[row][col]=player_char;
@@ -60,6 +68,68 @@ int Tic_tac_toe::step(int row, int col, char player_char){
         return 2;//победа
     }
     return 1;//ход проведен успешно
+}
+
+std::string Tic_tac_toe::out_place(){
+    std::string out="Player ";
+    if(step_s_player_){
+        out.append(player_name_1_+'\n');
+    } else {
+        out.append(player_name_2_+'\n');
+    }
+    for(int i=0; i<row_; ++i){
+        out.append("_______\n");
+        out.push_back('|');
+        for(int j=0; j<col_; ++j){
+            out.push_back(game_space_[i][j]);
+            out.push_back('|');
+        }
+        out.push_back('\n');
+    }
+    out.append("_______\n");
+    return out;
+}
+
+void Tic_tac_toe::game(){
+    int row=0;
+    int col=0;
+    int res_move=9;
+    if(first_step_){
+        std::cout<<"First player is "<< player_name_2_ << std::endl;
+        std::cout<<"Second player is "<< player_name_1_ << std::endl;
+    } else {
+        std::cout<<"First player is "<< player_name_1_ << std::endl;
+        std::cout<<"Second player is "<< player_name_2_ << std::endl;
+    }
+    for(size_t i=0; i<(size_t(row_)*size_t(col_)) && res_move!=0;++i){
+        res_move=0;
+        if(step_s_player_){
+            std::cout<< "The second player's move: ";
+        } else {
+            std::cout<< "The first player's move: ";
+        }
+        
+        do
+        {
+            std::cin >> row >> col;
+            res_move=step(row, col, step_s_player_);
+            if(res_move==0){
+                std::cout<< "Your move is wrong. Do new: ";
+            }
+        } while (res_move==0);
+        std::cout<<out_place()<<std::endl;
+        step_s_player_=!step_s_player_;
+    }
+    if(res_move==1){
+        std::cout << "No winner" << std::endl;
+    } else {
+        std::cout << "Player ";
+        if(!step_s_player_){
+            std::cout << player_name_1_ << "winner" << std::endl;
+        } else {
+            std::cout << player_name_2_ << "winner" << std::endl;
+        }
+    }
 }
 
 Tic_tac_toe::~Tic_tac_toe(){
