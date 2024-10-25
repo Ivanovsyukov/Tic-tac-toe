@@ -3,13 +3,12 @@
 int Tic_tac_toe::count_char_on_line_(int row, int col, char search, int row_change, int col_change){
     int count=0;
     bool end=false;
-    for(int i=row; !end && i>=0 && i<=row; i+=row_change){
-        for(int j=col; !end && j>=0 && j<=col; j+=col_change){
-            if(game_space_[i][j]==search){
-                ++count;
-            } else {
-                end=true;
-            }
+    int j=col;
+    for(int i=row; !end && i>=0 && i<row_ && j>=0 && j<col_; i+=row_change, j+=col_change){
+        if(game_space_[i][j]==search){
+            ++count;
+        } else {
+            end=true;
         }
     }
     return count;
@@ -43,7 +42,7 @@ Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, std::string player_
     player_name_1_=player_name_1;
     player_name_2_=player_name_2;
     game_space_=new char*[row];
-    for(size_t k=0; k<col; ++k){
+    for(size_t k=0; k<row; ++k){
         game_space_[k]=new char[col];
         for(size_t p=0; p<col; ++p){
             game_space_[k][p]=none_;
@@ -101,16 +100,15 @@ void Tic_tac_toe::game(){
         std::cout<<"First player is "<< player_name_1_ << std::endl;
         std::cout<<"Second player is "<< player_name_2_ << std::endl;
     }
-    for(size_t i=0; i<(size_t(row_)*size_t(col_)) && res_move!=0;++i){
-        res_move=0;
+    for(size_t i=0; i<(size_t(row_)*size_t(col_)) && res_move!=2;++i){
+        res_move=1;
         if(step_s_player_){
             std::cout<< "The second player's move: ";
         } else {
             std::cout<< "The first player's move: ";
         }
         
-        do
-        {
+        do{
             std::cin >> row >> col;
             res_move=step(row, col, step_s_player_);
             if(res_move==0){
@@ -125,15 +123,15 @@ void Tic_tac_toe::game(){
     } else {
         std::cout << "Player ";
         if(!step_s_player_){
-            std::cout << player_name_1_ << "winner" << std::endl;
+            std::cout << player_name_1_ << " is winner" << std::endl;
         } else {
-            std::cout << player_name_2_ << "winner" << std::endl;
+            std::cout << player_name_2_ << " is winner" << std::endl;
         }
     }
 }
 
 Tic_tac_toe::~Tic_tac_toe(){
-    for(size_t k=0; k<col_; ++k){
+    for(size_t k=0; k<row_; ++k){
         delete[] game_space_[k];
     }
     delete[] game_space_;
