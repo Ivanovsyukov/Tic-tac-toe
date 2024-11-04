@@ -1,0 +1,8 @@
+# #-этот символ в начале строки - комметарий
+username:user1
+password:12345
+row_count:3
+col_count:3
+win_line_len:3
+# время в секундах
+step_time:30

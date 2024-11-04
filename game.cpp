@@ -35,9 +35,10 @@ bool Tic_tac_toe::first_player_choose(){
     return bool((std::rand())%2);
 }
 
-Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, std::string player_name_1, std::string player_name_2){
+Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2){
     row_=row;
     col_=col;
+    time_per_move_=time_per_move;
     len_win_line_=len_win_line;
     player_name_1_=player_name_1;
     player_name_2_=player_name_2;
@@ -89,40 +90,92 @@ std::string Tic_tac_toe::out_place(){
     return out;
 }
 
-void Tic_tac_toe::game(){
-    int row=0;
-    int col=0;
-    int res_move=9;
-    if(first_step_){
-        std::cout<<"First player is "<< player_name_2_ << std::endl;
-        std::cout<<"Second player is "<< player_name_1_ << std::endl;
+/*
+
+    
+   
+    // Цикл, который проверяет, не истекло ли время, пока идет ввод
+    
+    std::cout << "Вы выбрали клетку: " << move << '\n';
+
+*/
+
+void Tic_tac_toe::game() {
+    int row = 0;
+    int col = 0;
+    int res_move = 9;
+    bool yes_input_time = true;
+
+    if (first_step_) {
+        std::cout << "Первый игрок - " << player_name_2_ << std::endl;
+        std::cout << "Второй игрок - " << player_name_1_ << std::endl;
     } else {
-        std::cout<<"First player is "<< player_name_1_ << std::endl;
-        std::cout<<"Second player is "<< player_name_2_ << std::endl;
+        std::cout << "First player is " << player_name_1_ << std::endl;
+        std::cout << "Second player is " << player_name_2_ << std::endl;
     }
-    for(size_t i=0; i<(size_t(row_)*size_t(col_)) && res_move!=2;++i){
-        res_move=1;
-        if(step_s_player_){
-            std::cout<< "The second player's move: ";
+
+    for (size_t i = 0; i < (size_t(row_) * size_t(col_)) && res_move != 2; ++i) {
+        res_move = 1;
+        if (step_s_player_) {
+            std::cout << "The second player's move: ";
         } else {
-            std::cout<< "The first player's move: ";
+            std::cout << "The first player's move: ";
         }
-        
-        do{
-            std::cin >> row >> col;
-            res_move=step(row, col, step_s_player_);
-            if(res_move==0){
-                std::cout<< "Your move is wrong. Do new: ";
+        std::cout << "У вас есть " << time_per_move_ << " секунд для хода." << std::endl;
+
+        do {
+            yes_input_time = true;
+            auto start = std::chrono::steady_clock::now();
+
+            // Запускаем ввод игрока в отдельном потоке
+            std::thread input_thread([&]() {
+                std::cout << "Введите ваш ход (координаты клетки): ";
+                std::cin >> row >> col;
+            });
+
+            // Отслеживаем время на ввод, пока поток не завершится
+            while (input_thread.joinable() && yes_input_time) {
+                auto now = std::chrono::steady_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+
+                if (elapsed >= time_per_move_) {
+                    std::cout << "Время на ход истекло!" << std::endl;
+                    input_thread.detach(); // Отключаем поток ввода, если время вышло
+                    yes_input_time = false;
+                    break; // Выходим из цикла while
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
-        } while (res_move==0);
-        std::cout<<out_place()<<std::endl;
-        step_s_player_=!step_s_player_;
+
+            // Завершаем поток, если игрок успел сделать ввод
+            if (input_thread.joinable()) {
+                input_thread.join();
+            }
+
+            // Обработка результата хода
+            if (yes_input_time) {
+                res_move = step(row, col, step_s_player_);
+                if (res_move == 0) {
+                    std::cout << "Your move is wrong. Do new: ";
+                }
+            } else {
+                // Если ход просрочен, прерываем цикл do-while
+                break;
+            }
+
+        } while (res_move == 0 && yes_input_time);
+
+        // Вывод текущего состояния поля
+        std::cout << out_place() << std::endl;
+        step_s_player_ = !step_s_player_; // Меняем игрока
     }
-    if(res_move==1){
+
+    // Проверка на победу или ничью
+    if (res_move == 1) {
         std::cout << "No winner" << std::endl;
     } else {
         std::cout << "Player ";
-        if(!step_s_player_){
+        if (!step_s_player_) {
             std::cout << player_name_1_ << " is winner" << std::endl;
         } else {
             std::cout << player_name_2_ << " is winner" << std::endl;
