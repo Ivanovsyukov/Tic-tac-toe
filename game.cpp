@@ -78,7 +78,7 @@ std::string Tic_tac_toe::out_place(){
         out.append(player_name_2_+'\n');
     }
     for(int i=0; i<row_; ++i){
-        out.append("_______\n");
+        out.append(std::string(1+2*col_, '_')+'\n');
         out.push_back('|');
         for(int j=0; j<col_; ++j){
             out.push_back(game_space_[i][j]);
@@ -86,7 +86,7 @@ std::string Tic_tac_toe::out_place(){
         }
         out.push_back('\n');
     }
-    out.append("_______\n");
+    out.append(std::string(1+2*col_, '_')+'\n');
     return out;
 }
 
@@ -105,10 +105,11 @@ void Tic_tac_toe::game() {
     int col = 0;
     int res_move = 9;
     bool yes_input_time = true;
+    bool input_complete=false;
 
     if (first_step_) {
-        std::cout << "Первый игрок - " << player_name_2_ << std::endl;
-        std::cout << "Второй игрок - " << player_name_1_ << std::endl;
+        std::cout << "First player is " << player_name_2_ << std::endl;
+        std::cout << "Second player is " << player_name_1_ << std::endl;
     } else {
         std::cout << "First player is " << player_name_1_ << std::endl;
         std::cout << "Second player is " << player_name_2_ << std::endl;
@@ -116,50 +117,53 @@ void Tic_tac_toe::game() {
 
     for (size_t i = 0; i < (size_t(row_) * size_t(col_)) && res_move != 2; ++i) {
         res_move = 1;
-        if (step_s_player_) {
-            std::cout << "The second player's move: ";
-        } else {
-            std::cout << "The first player's move: ";
-        }
-        std::cout << "У вас есть " << time_per_move_ << " секунд для хода." << std::endl;
-
+        std::cout << "Your have " << time_per_move_ << " second for turn" << std::endl;
         do {
             yes_input_time = true;
+            input_complete=false;
             auto start = std::chrono::steady_clock::now();
 
             // Запускаем ввод игрока в отдельном потоке
             std::thread input_thread([&]() {
-                std::cout << "Введите ваш ход (координаты клетки): ";
+                if (step_s_player_) {
+                    std::cout << "The second player's move: ";
+                } else {
+                    std::cout << "The first player's move: ";
+                }
                 std::cin >> row >> col;
+                input_complete=true;
             });
 
             // Отслеживаем время на ввод, пока поток не завершится
-            while (input_thread.joinable() && yes_input_time) {
+            while (!input_complete && yes_input_time) {
                 auto now = std::chrono::steady_clock::now();
                 auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
-
                 if (elapsed >= time_per_move_) {
-                    std::cout << "Время на ход истекло!" << std::endl;
-                    input_thread.detach(); // Отключаем поток ввода, если время вышло
+                    std::cout << std::endl << "Your move time is end" << std::endl;
                     yes_input_time = false;
                     break; // Выходим из цикла while
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
 
-            // Завершаем поток, если игрок успел сделать ввод
+            // Если время истекло, завершаем поток, иначе ожидаем завершения ввода
             if (input_thread.joinable()) {
-                input_thread.join();
+                if (yes_input_time) {
+                    input_thread.join();
+                } else {
+                    // Завершаем поток корректно, если ввод не завершился вовремя
+                    input_thread.detach(); // Завершаем поток без ожидания завершения
+                }
             }
 
             // Обработка результата хода
             if (yes_input_time) {
                 res_move = step(row, col, step_s_player_);
                 if (res_move == 0) {
-                    std::cout << "Your move is wrong. Do new: ";
+                    std::cout << "Your move is incorrect. Try again: ";
                 }
             } else {
-                // Если ход просрочен, прерываем цикл do-while
+                // Если ход просрочен, выходим из цикла do-while
                 break;
             }
 

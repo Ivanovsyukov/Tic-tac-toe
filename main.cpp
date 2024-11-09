@@ -9,8 +9,7 @@ std::unordered_map<std::string, std::string> readConfig() {
     std::ifstream file("config.ttt");
 
     if (!file.is_open()) {
-        std::cerr << "Ошибка: не удалось открыть файл конфигурации."<<std::endl;
-        return config;
+        throw "Error: no config file";
     }
 
     std::string line;
@@ -44,7 +43,14 @@ std::unordered_map<std::string, std::string> readConfig() {
 
 
 int main(){
-    std::unordered_map<std::string, std::string> config = readConfig();
+    std::unordered_map<std::string, std::string> config;
+    try{
+        config = readConfig();
+    }
+    catch(const std::exception& e){
+        std::cout << e.what() << std::endl;
+    }
+    
     int row=-1;
     int col=-1;
     int len_win_line=-1;
@@ -65,11 +71,11 @@ int main(){
         }else if((*pos).first=="step_time"){
             step_time=std::atoi(((*pos).second).c_str());
         } else {
-            std::cout<<(*pos).first << " - нет нужного конфига." << std::endl;
+            std::cout<<(*pos).first << " is not config for game" << std::endl;
         }
     }
     if(row<=0 || col<=0 || len_win_line<=0 || step_time<=0 || playername_1==""){
-        std::cout << "У тебя есть конфиг или конфиги с ошибкой" << std::endl;
+        std::cout << "Your configs don't have important for game" << std::endl;
         return 1;
     }
     Tic_tac_toe mainest(row, col, len_win_line, step_time, playername_1, playername_2);
