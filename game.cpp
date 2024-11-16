@@ -35,13 +35,18 @@ bool Tic_tac_toe::first_player_choose(){
     return bool((std::rand())%2);
 }
 
-Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2){
+Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2, std::string type_player){
     row_=row;
     col_=col;
     time_per_move_=time_per_move;
     len_win_line_=len_win_line;
     player_name_1_=player_name_1;
     player_name_2_=player_name_2;
+    if(type_player=="server"){
+        type_player_=0;
+    } else {
+        type_player_=1;
+    }
     game_space_=new char*[row];
     for(size_t k=0; k<row; ++k){
         game_space_[k]=new char[col];

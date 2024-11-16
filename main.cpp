@@ -57,11 +57,15 @@ int main(){
     int step_time=-1;
     std::string playername_1="";
     std::string playername_2="";
+    std::string password="";
+    std::string type_person="";
     for(auto pos=config.begin(); pos!=config.end(); ++pos){
         if((*pos).first=="username"){
             playername_1=(*pos).second;
         }else if((*pos).first=="password"){
-
+            password=(*pos).second;
+        }else if((*pos).first=="type"){
+            type_person=(*pos).second;
         }else if((*pos).first=="row_count"){
             row=std::atoi(((*pos).second).c_str());
         }else if((*pos).first=="col_count"){
@@ -74,11 +78,19 @@ int main(){
             std::cout<<(*pos).first << " is not config for game" << std::endl;
         }
     }
+    if(type_person=="server"){
+
+    } else if(type_person=="player"){
+
+    } else {
+        std::cout<< "Wrong player type." << std::endl;
+        return 2;
+    }
     if(row<=0 || col<=0 || len_win_line<=0 || step_time<=0 || playername_1==""){
         std::cout << "Your configs don't have important for game" << std::endl;
         return 1;
     }
-    Tic_tac_toe mainest(row, col, len_win_line, step_time, playername_1, playername_2);
+    Tic_tac_toe mainest(row, col, len_win_line, step_time, playername_1, playername_2, type_person);
     mainest.game();
     return 0;
 }

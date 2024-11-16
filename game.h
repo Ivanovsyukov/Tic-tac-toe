@@ -16,6 +16,7 @@ class Tic_tac_toe{
     char** game_space_;
     int len_win_line_;
     std::string player_name_1_;
+    bool type_player_;// 0 - server, 1 - client
     std::string player_name_2_;
     bool first_step_;
     bool step_s_player_;
@@ -27,7 +28,7 @@ class Tic_tac_toe{
     int step(int row, int col, bool player_move);
     bool playerMove(); // Метод для выполнения хода игрока с учетом времени
 public:
-    Tic_tac_toe(int row=3, int col=3, int len_win_line=3, int time_per_move=30, std::string player_name_1="1", std::string player_name_2="2");
+    Tic_tac_toe(int row=3, int col=3, int len_win_line=3, int time_per_move=30, std::string player_name_1="1", std::string player_name_2="2", std::string type_player="player");
     void game();
     ~Tic_tac_toe();
 };
