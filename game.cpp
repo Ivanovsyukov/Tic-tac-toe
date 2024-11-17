@@ -31,22 +31,13 @@ bool Tic_tac_toe::check_win(int row, int col, char win){
     return false;
 }
 
-bool Tic_tac_toe::first_player_choose(){
-    return bool((std::rand())%2);
-}
-
-Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2, std::string type_player){
+Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2, bool first_step){
     row_=row;
     col_=col;
     time_per_move_=time_per_move;
     len_win_line_=len_win_line;
     player_name_1_=player_name_1;
     player_name_2_=player_name_2;
-    if(type_player=="server"){
-        type_player_=0;
-    } else {
-        type_player_=1;
-    }
     game_space_=new char*[row];
     for(size_t k=0; k<row; ++k){
         game_space_[k]=new char[col];
@@ -54,8 +45,8 @@ Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, 
             game_space_[k][p]=none_;
         }
     }
-    step_s_player_=first_player_choose();
-    first_step_=step_s_player_;
+    first_step_=first_step;
+    step_s_player_=first_step_;
 }
 
 int Tic_tac_toe::step(int row, int col, bool player_move){
@@ -95,22 +86,13 @@ std::string Tic_tac_toe::out_place(){
     return out;
 }
 
-/*
-
-    
-   
-    // Цикл, который проверяет, не истекло ли время, пока идет ввод
-    
-    std::cout << "Вы выбрали клетку: " << move << '\n';
-
-*/
-
 void Tic_tac_toe::game() {
     int row = 0;
     int col = 0;
     int res_move = 9;
     bool yes_input_time = true;
     bool input_complete=false;
+    bool play_char=false; //символ хода Х или О.
 
     if (first_step_) {
         std::cout << "First player is " << player_name_2_ << std::endl;
@@ -121,62 +103,71 @@ void Tic_tac_toe::game() {
     }
 
     for (size_t i = 0; i < (size_t(row_) * size_t(col_)) && res_move != 2; ++i) {
-        res_move = 1;
-        std::cout << "Your have " << time_per_move_ << " second for turn" << std::endl;
-        do {
-            yes_input_time = true;
-            input_complete=false;
-            auto start = std::chrono::steady_clock::now();
+        if(!step_s_player_){//ход игрока, исполняющего ход
+            res_move = 1;
+            std::cout << "You have " << time_per_move_ << " second for turn" << std::endl;
+            do {
+                yes_input_time = true;
+                input_complete=false;
+                auto start = std::chrono::steady_clock::now();
 
-            // Запускаем ввод игрока в отдельном потоке
-            std::thread input_thread([&]() {
-                if (step_s_player_) {
-                    std::cout << "The second player's move: ";
-                } else {
-                    std::cout << "The first player's move: ";
+                // Запускаем ввод игрока в отдельном потоке
+                std::thread input_thread([&]() {
+                    if (step_s_player_) {
+                        std::cout << "The second player's move: ";
+                    } else {
+                        std::cout << "The first player's move: ";
+                    }
+                    std::cin >> row >> col;
+                    input_complete=true;
+                });
+
+                // Отслеживаем время на ввод, пока поток не завершится
+                while (!input_complete && yes_input_time) {
+                    auto now = std::chrono::steady_clock::now();
+                    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+                    if (elapsed >= time_per_move_) {
+                        std::cout << std::endl << "You move time is end" << std::endl;
+                        yes_input_time = false;
+                        break; // Выходим из цикла while
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
-                std::cin >> row >> col;
-                input_complete=true;
-            });
 
-            // Отслеживаем время на ввод, пока поток не завершится
-            while (!input_complete && yes_input_time) {
-                auto now = std::chrono::steady_clock::now();
-                auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
-                if (elapsed >= time_per_move_) {
-                    std::cout << std::endl << "Your move time is end" << std::endl;
-                    yes_input_time = false;
-                    break; // Выходим из цикла while
+                // Если время истекло, завершаем поток, иначе ожидаем завершения ввода
+                if (input_thread.joinable()) {
+                    if (yes_input_time) {
+                        input_thread.join();
+                    } else {
+                        // Завершаем поток корректно, если ввод не завершился вовремя
+                        input_thread.detach(); // Завершаем поток без ожидания завершения
+                    }
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
 
-            // Если время истекло, завершаем поток, иначе ожидаем завершения ввода
-            if (input_thread.joinable()) {
+                // Обработка результата хода
                 if (yes_input_time) {
-                    input_thread.join();
+                    res_move = step(row, col, play_char);
+                    if (res_move == 0) {
+                        std::cout << "Your move is incorrect. Try again: ";
+                    }
                 } else {
-                    // Завершаем поток корректно, если ввод не завершился вовремя
-                    input_thread.detach(); // Завершаем поток без ожидания завершения
+                    // Если ход просрочен, выходим из цикла do-while
+                    break;
                 }
-            }
 
-            // Обработка результата хода
-            if (yes_input_time) {
-                res_move = step(row, col, step_s_player_);
-                if (res_move == 0) {
-                    std::cout << "Your move is incorrect. Try again: ";
-                }
+            } while (res_move == 0 && yes_input_time);
+        } else {//ход игрока, ожидающего хода
+            //чтение хода (row, col, resmove)
+            if(play_char){
+                game_space_[row][col]='O';
             } else {
-                // Если ход просрочен, выходим из цикла do-while
-                break;
+                game_space_[row][col]='X';
             }
-
-        } while (res_move == 0 && yes_input_time);
-
+        }
         // Вывод текущего состояния поля
         std::cout << out_place() << std::endl;
         step_s_player_ = !step_s_player_; // Меняем игрока
+        play_char=!play_char;
     }
 
     // Проверка на победу или ничью

@@ -11,3 +11,5 @@ col_count: 3
 win_line_len: 3
 # время в секундах
 step_time: 60
+port:1234
+ip:192.168.0.1

@@ -59,6 +59,7 @@ int main(){
     std::string playername_2="";
     std::string password="";
     std::string type_person="";
+    bool first_player=false;
     for(auto pos=config.begin(); pos!=config.end(); ++pos){
         if((*pos).first=="username"){
             playername_1=(*pos).second;
@@ -79,7 +80,7 @@ int main(){
         }
     }
     if(type_person=="server"){
-
+        first_player=bool((std::rand())%2);
     } else if(type_person=="player"){
 
     } else {
@@ -90,7 +91,7 @@ int main(){
         std::cout << "Your configs don't have important for game" << std::endl;
         return 1;
     }
-    Tic_tac_toe mainest(row, col, len_win_line, step_time, playername_1, playername_2, type_person);
+    Tic_tac_toe mainest(row, col, len_win_line, step_time, playername_1, playername_2, first_player);
     mainest.game();
     return 0;
 }
