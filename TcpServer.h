@@ -1,23 +1,26 @@
 #ifndef TCPSERVER_H
 #define TCPSERVER_H
 
+#include <winsock2.h>
 #include <string>
+
+#pragma comment(lib, "ws2_32.lib") // Линковка библиотеки WinSock
 
 class TcpServer {
 private:
-    int server_fd; // Файловый дескриптор сервера
-    int client_fd; // Файловый дескриптор подключенного клиента
-    int port;      // Порт для прослушивания
-    bool is_running;
+    SOCKET serverSocket; // Серверный сокет
+    SOCKET clientSocket; // Сокет клиента
+    sockaddr_in serverAddr; // Адрес сервера
+    sockaddr_in clientAddr; // Адрес клиента
 
 public:
-    TcpServer(int port);
+    TcpServer();
     ~TcpServer();
 
-    void start();                 // Запуск сервера
-    void stop();                  // Остановка сервера
-    std::string receiveData();    // Получение данных от клиента
-    void sendData(const std::string& data); // Отправка данных клиенту
+    bool startServer(int port);
+    bool acceptClient();
+    bool sendMessage(const std::string& message);
+    std::string receiveMessage();
 };
 
 #endif

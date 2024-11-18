@@ -1,83 +1,76 @@
 #include "TcpServer.h"
 #include <iostream>
-#include <cstring>
-#include <unistd.h>
-#include<winsock2.h>
 
-TcpServer::TcpServer(int port) : server_fd(-1), client_fd(-1), port(port), is_running(false) {}
+TcpServer::TcpServer() {
+    // Инициализация WinSock
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "WinSock initialization failed!" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // Создаем серверный сокет
+    serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (serverSocket == INVALID_SOCKET) {
+        std::cerr << "Failed to create socket!" << std::endl;
+        WSACleanup();
+        exit(EXIT_FAILURE);
+    }
+}
 
 TcpServer::~TcpServer() {
-    stop();
+    closesocket(clientSocket); // Закрываем клиентский сокет
+    closesocket(serverSocket); // Закрываем серверный сокет
+    WSACleanup(); // Очищаем ресурсы WinSock
 }
 
-void TcpServer::start() {
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd == -1) {
-        perror("Socket creation failed");
-        throw std::runtime_error("Socket creation failed");
+bool TcpServer::startServer(int port) {
+    // Настройка адреса сервера
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(port);
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+
+    // Привязка сокета
+    if (bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+        std::cerr << "Failed to bind socket!" << std::endl;
+        return false;
     }
 
-    sockaddr_in server_addr{};
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(port);
-
-    if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
-        perror("Bind failed");
-        throw std::runtime_error("Bind failed");
+    // Переводим сокет в режим прослушивания
+    if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
+        std::cerr << "Failed to listen on socket!" << std::endl;
+        return false;
     }
 
-    if (listen(server_fd, 1) == -1) {
-        perror("Listen failed");
-        throw std::runtime_error("Listen failed");
-    }
-
-    std::cout << "Server is listening on port " << port << std::endl;
-
-    sockaddr_in client_addr{};
-    socklen_t client_len = sizeof(client_addr);
-    client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-    if (client_fd == -1) {
-        perror("Accept failed");
-        throw std::runtime_error("Accept failed");
-    }
-
-    std::cout << "Client connected: " << inet_ntoa(client_addr.sin_addr) << std::endl;
-    is_running = true;
+    std::cout << "Server started on port " << port << std::endl;
+    return true;
 }
 
-void TcpServer::stop() {
-    if (client_fd != -1) {
-        close(client_fd);
-        client_fd = -1;
+bool TcpServer::acceptClient() {
+    int clientAddrSize = sizeof(clientAddr);
+    clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientAddrSize);
+    if (clientSocket == INVALID_SOCKET) {
+        std::cerr << "Failed to accept client!" << std::endl;
+        return false;
     }
-    if (server_fd != -1) {
-        close(server_fd);
-        server_fd = -1;
-    }
-    is_running = false;
+
+    std::cout << "Client connected!" << std::endl;
+    return true;
 }
 
-std::string TcpServer::receiveData() {
-    if (!is_running) throw std::runtime_error("Server is not running");
+bool TcpServer::sendMessage(const std::string& message) {
+    if (send(clientSocket, message.c_str(), message.length(), 0) == SOCKET_ERROR) {
+        std::cerr << "Failed to send message!" << std::endl;
+        return false;
+    }
+    return true;
+}
 
+std::string TcpServer::receiveMessage() {
     char buffer[1024];
-    ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    if (bytes_received <= 0) {
-        perror("Receive failed");
-        throw std::runtime_error("Receive failed");
+    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+    if (bytesReceived <= 0) {
+        return ""; // Соединение закрыто или ошибка
     }
-
-    buffer[bytes_received] = '\0'; // Null-terminate the received string
-    return std::string(buffer);
-}
-
-void TcpServer::sendData(const std::string& data) {
-    if (!is_running) throw std::runtime_error("Server is not running");
-
-    ssize_t bytes_sent = send(client_fd, data.c_str(), data.size(), 0);
-    if (bytes_sent == -1) {
-        perror("Send failed");
-        throw std::runtime_error("Send failed");
-    }
+    return std::string(buffer, bytesReceived);
 }

@@ -1,59 +1,57 @@
 #include "TcpClient.h"
 #include <iostream>
-#include <cstring>
-#include <unistd.h>
-#include<winsock2.h>
-#include <WS2tcpip.h>
-#include <tchar.h>
 
-TcpClient::TcpClient(const std::string& ip, int port) : client_fd(-1), server_ip(ip), server_port(port) {}
+TcpClient::TcpClient() {
+    // Инициализация WinSock
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "WinSock initialization failed!" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // Создаем сокет
+    clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (clientSocket == INVALID_SOCKET) {
+        std::cerr << "Failed to create socket!" << std::endl;
+        WSACleanup();
+        exit(EXIT_FAILURE);
+    }
+}
 
 TcpClient::~TcpClient() {
-    if (client_fd != -1) {
-        close(client_fd);
-    }
+    closesocket(clientSocket); // Закрываем сокет
+    WSACleanup(); // Очищаем ресурсы WinSock
 }
 
-void TcpClient::connectToServer() {
-    client_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_fd == -1) {
-        perror("Socket creation failed");
-        throw std::runtime_error("Socket creation failed");
+bool TcpClient::connectToServer(const std::string& ipAddress, int port) {
+    // Настройка адреса сервера
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(port);
+    serverAddr.sin_addr.s_addr = inet_addr(ipAddress.c_str());
+
+    // Подключение к серверу
+    if (connect(clientSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+        std::cerr << "Connection to server failed!" << std::endl;
+        return false;
     }
 
-    sockaddr_in server_addr{};
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(server_port);
-
-    if (inet_pton(AF_INET, server_ip.c_str(), &server_addr.sin_addr) <= 0) {
-        perror("Invalid address");
-        throw std::runtime_error("Invalid address");
-    }
-
-    if (connect(client_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
-        perror("Connection failed");
-        throw std::runtime_error("Connection failed");
-    }
-
-    std::cout << "Connected to server at " << server_ip << ":" << server_port << std::endl;
+    std::cout << "Connected to server: " << ipAddress << ":" << port << std::endl;
+    return true;
 }
 
-std::string TcpClient::receiveData() {
+bool TcpClient::sendMessage(const std::string& message) {
+    if (send(clientSocket, message.c_str(), message.length(), 0) == SOCKET_ERROR) {
+        std::cerr << "Failed to send message!" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+std::string TcpClient::receiveMessage() {
     char buffer[1024];
-    ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    if (bytes_received <= 0) {
-        perror("Receive failed");
-        throw std::runtime_error("Receive failed");
+    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+    if (bytesReceived <= 0) {
+        return ""; // Соединение закрыто или ошибка
     }
-
-    buffer[bytes_received] = '\0'; // Null-terminate the received string
-    return std::string(buffer);
-}
-
-void TcpClient::sendData(const std::string& data) {
-    ssize_t bytes_sent = send(client_fd, data.c_str(), data.size(), 0);
-    if (bytes_sent == -1) {
-        perror("Send failed");
-        throw std::runtime_error("Send failed");
-    }
+    return std::string(buffer, bytesReceived);
 }
