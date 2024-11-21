@@ -1,4 +1,6 @@
 #include "game.h"
+#include "TcpServer.h"
+#include "TcpClient.h"
 
 int Tic_tac_toe::count_char_on_line_(int row, int col, char search, int row_change, int col_change){
     int count=0;
@@ -31,13 +33,9 @@ bool Tic_tac_toe::check_win(int row, int col, char win){
     return false;
 }
 
-Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2, bool first_step){
-    row_=row;
-    col_=col;
-    time_per_move_=time_per_move;
-    len_win_line_=len_win_line;
-    player_name_1_=player_name_1;
-    player_name_2_=player_name_2;
+Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2, bool first_step, TcpServer* server, TcpClient* client): row_(row), col_(col), len_win_line_(len_win_line), time_per_move_(time_per_move),
+      player_name_1_(player_name_1), player_name_2_(player_name_2), first_step_(first_step),
+      server_(server), client_(client), step_s_player_(first_step){
     game_space_=new char*[row];
     for(size_t k=0; k<row; ++k){
         game_space_[k]=new char[col];
@@ -45,8 +43,6 @@ Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, 
             game_space_[k][p]=none_;
         }
     }
-    first_step_=first_step;
-    step_s_player_=first_step_;
 }
 
 int Tic_tac_toe::step(int row, int col, bool player_move){
@@ -147,17 +143,19 @@ void Tic_tac_toe::game() {
                 // Обработка результата хода
                 if (yes_input_time) {
                     res_move = step(row, col, play_char);
-                    if (res_move == 0) {
-                        std::cout << "Your move is incorrect. Try again: ";
-                    }
+                    send_move(row, col); // Отправляем ход
                 } else {
-                    // Если ход просрочен, выходим из цикла do-while
-                    break;
+                    send_move(-1, -1); // Время вышло, пропуск хода
                 }
-
             } while (res_move == 0 && yes_input_time);
         } else {//ход игрока, ожидающего хода
             //чтение хода (row, col, resmove)
+            receive_move(row, col);
+            if (row != -1 && col != -1) {
+                step(row, col, play_char);
+            } else {
+                std::cout << "Opponent missed their turn.\n";
+            }
             if(play_char){
                 game_space_[row][col]='O';
             } else {
