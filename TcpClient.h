@@ -6,7 +6,7 @@
 
 #pragma comment(lib, "ws2_32.lib") // Линковка библиотеки WinSock
 
-class TcpClient {
+class TcpClient{
 private:
     SOCKET clientSocket; // Сокет клиента
     sockaddr_in serverAddr; // Адрес сервера

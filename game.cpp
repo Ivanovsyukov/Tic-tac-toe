@@ -154,7 +154,7 @@ void Tic_tac_toe::game() {
             if (row != -1 && col != -1) {
                 step(row, col, play_char);
             } else {
-                std::cout << "Opponent missed their turn.\n";
+                std::cout << "Opponent missed their turn." << std::endl;
             }
             if(play_char){
                 game_space_[row][col]='O';

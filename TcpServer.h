@@ -6,7 +6,7 @@
 
 #pragma comment(lib, "ws2_32.lib") // Линковка библиотеки WinSock
 
-class TcpServer {
+class TcpServer{
 private:
     SOCKET serverSocket; // Серверный сокет
     SOCKET clientSocket; // Сокет клиента
