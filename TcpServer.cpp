@@ -74,3 +74,7 @@ std::string TcpServer::receiveMessage(){
     }
     return std::string(buffer, bytesReceived);
 }
+
+bool TcpServer::check_start(){
+    return serverSocket == INVALID_SOCKET;
+}

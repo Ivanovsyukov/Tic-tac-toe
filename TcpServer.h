@@ -21,6 +21,7 @@ public:
     bool acceptClient();
     bool sendMessage(const std::string& message);
     std::string receiveMessage();
+    bool check_start();
 };
 
 #endif

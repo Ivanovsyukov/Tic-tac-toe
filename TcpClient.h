@@ -18,6 +18,7 @@ public:
     bool connectToServer(const std::string& ipAddress, int port);
     bool sendMessage(const std::string& message);
     std::string receiveMessage();
+    bool check_start();
 };
 
 #endif

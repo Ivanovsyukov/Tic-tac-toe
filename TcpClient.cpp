@@ -55,3 +55,7 @@ std::string TcpClient::receiveMessage(){
     }
     return std::string(buffer, bytesReceived);
 }
+
+bool TcpClient::check_start(){
+    return clientSocket == INVALID_SOCKET;
+}

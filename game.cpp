@@ -33,9 +33,9 @@ bool Tic_tac_toe::check_win(int row, int col, char win){
     return false;
 }
 
-Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2, bool first_step, TcpServer* server, TcpClient* client): row_(row), col_(col), len_win_line_(len_win_line), time_per_move_(time_per_move),
+Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2, bool first_step, TcpServer* server, TcpClient* client, bool type_connection): row_(row), col_(col), len_win_line_(len_win_line), time_per_move_(time_per_move),
       player_name_1_(player_name_1), player_name_2_(player_name_2), first_step_(first_step),
-      server_(server), client_(client), step_s_player_(first_step){
+      server_(server), client_(client), step_s_player_(first_step), type_connection_(type_connection){
     game_space_=new char*[row];
     for(size_t k=0; k<row; ++k){
         game_space_[k]=new char[col];
@@ -46,14 +46,14 @@ Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, 
 }
 
 int Tic_tac_toe::step(int row, int col, bool player_move){
+    if(row<0 || col<0 || game_space_[row][col]!=none_){
+        return 0;//занятое поле
+    }
     char player_char=' ';
     if(player_move){
         player_char='O';
     }else {
         player_char='X';
-    }
-    if(row<0 || col<0 || game_space_[row][col]!=none_){
-        return 0;//занятое поле
     }
     game_space_[row][col]=player_char;
     if(check_win(row, col, player_char)){
@@ -82,6 +82,36 @@ std::string Tic_tac_toe::out_place(){
     return out;
 }
 
+void Tic_tac_toe::send_move(int row, int col) {
+    std::string move="-,-";
+    if(row>=0 && col>=0){
+        std::string move = std::to_string(row) + "," + std::to_string(col);
+    }
+    if (!type_connection_) {
+        server_->sendMessage(move);
+    } else if (client_) {
+        client_->sendMessage(move);
+    }
+}
+
+void Tic_tac_toe::receive_move(int& row, int& col) {
+    std::string move;
+    if (!type_connection_) {
+        move = server_->receiveMessage();
+    } else if (client_) {
+        move = client_->receiveMessage();
+    }
+
+    if (move == "-,-") {
+        row = -1; // Пропуск хода
+        col = -1;
+    } else {
+        size_t delimiter = move.find(',');
+        row = std::stoi(move.substr(0, delimiter));
+        col = std::stoi(move.substr(delimiter + 1));
+    }
+}
+
 void Tic_tac_toe::game() {
     int row = 0;
     int col = 0;
@@ -89,6 +119,7 @@ void Tic_tac_toe::game() {
     bool yes_input_time = true;
     bool input_complete=false;
     bool play_char=false; //символ хода Х или О.
+    std::string input=" ";
 
     if (first_step_) {
         std::cout << "First player is " << player_name_2_ << std::endl;
@@ -143,9 +174,11 @@ void Tic_tac_toe::game() {
                 // Обработка результата хода
                 if (yes_input_time) {
                     res_move = step(row, col, play_char);
-                    send_move(row, col); // Отправляем ход
+                    if(res_move!=0){
+                        send_move(row, col);
+                    }
                 } else {
-                    send_move(-1, -1); // Время вышло, пропуск хода
+                    send_move(-1, -1);
                 }
             } while (res_move == 0 && yes_input_time);
         } else {//ход игрока, ожидающего хода

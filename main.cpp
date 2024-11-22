@@ -60,17 +60,20 @@ int main(){
     int port=0;
     std::string playername_1="";
     std::string playername_2="";
-    std::string password="";
+    std::string my_password="";
+    std::string other_password="";
     std::string type_person="";
     std::string ip="";
     TcpServer* server = nullptr;
     TcpClient* client = nullptr;
     bool first_step = false;
+    bool type_connection=false;
+    bool connection_check=false;
     for(auto pos=config.begin(); pos!=config.end(); ++pos){
         if((*pos).first=="username"){
             playername_1=(*pos).second;
         } else if((*pos).first=="password"){
-            password=(*pos).second;
+            my_password=(*pos).second;
         } else if((*pos).first=="type"){
             type_person=(*pos).second;
         } else if((*pos).first=="row_count"){
@@ -89,12 +92,34 @@ int main(){
             std::cout<<(*pos).first << " is not config for game" << std::endl;
         }
     }
+    if(row<=0 || col<=0 || len_win_line<=0 || step_time<=0 || playername_1==""){
+        std::cout << "Your configs don't have important for game" << std::endl;
+        return 1;
+    }
     if(type_person=="server"){
         server = new TcpServer();
-        server->startServer(port);
-
+        if(!(server->check_start())){
+            delete server;
+            return -4;
+        }
+        connection_check=server->startServer(port);
+        if(!connection_check){
+            delete server;
+            return -2;
+        }
+        connection_check=server->acceptClient();
+        if(!connection_check){
+            delete server;
+            return -3;
+        }
         // Ожидание подключения клиента
         std::cout << "Waiting for a client to connect." << std::endl;
+        other_password = server->receiveMessage();
+        if(my_password!=other_password){
+            server->sendMessage("wr");
+            delete server;
+            return -5;
+        }
         playername_2 = server->receiveMessage(); // Получаем имя клиента
         server->sendMessage(playername_1);      // Отправляем свое имя
 
@@ -103,11 +128,24 @@ int main(){
         first_step = (rand() % 2 == 0); // Случайное определение очередности
         server->sendMessage(first_step ? "1" : "0"); // Отправляем очередность
     } else if(type_person=="player"){
+        type_connection=true;
         // Создание клиента
         client = new TcpClient();
-        client->connectToServer(ip, port);
+        if(!(client->check_start())){
+            delete client;
+            return -4;
+        }
+        connection_check=client->connectToServer(ip, port);
+        if(!connection_check){
+            delete client;
+            return -2;
+        }
 
         // Отправляем свое имя серверу
+        if(client->receiveMessage()=="wr"){
+            delete client;
+            return -5;
+        }
         client->sendMessage(playername_1);
         playername_2 = client->receiveMessage(); // Получаем имя сервера
 
@@ -117,13 +155,12 @@ int main(){
         std::cout<< "Wrong player type." << std::endl;
         return 2;
     }
-    if(row<=0 || col<=0 || len_win_line<=0 || step_time<=0 || playername_1==""){
-        std::cout << "Your configs don't have important for game" << std::endl;
-        return 1;
-    }
-    Tic_tac_toe mainest(row, col, len_win_line, step_time, playername_1, playername_2, first_step);
+    Tic_tac_toe mainest(row, col, len_win_line, step_time, playername_1, playername_2, first_step, server, client, type_connection);
     mainest.game();
-    delete server;
-    delete client;
+    if(!type_connection){
+        delete server;
+    } else {
+        delete client;
+    }
     return 0;
 }
