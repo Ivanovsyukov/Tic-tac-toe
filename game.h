@@ -5,6 +5,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include "Global_logger.h"
 
 class Tic_tac_toe{
     const char one_char_='X';

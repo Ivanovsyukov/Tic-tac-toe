@@ -1,8 +1,7 @@
-#ifndef TCPCLIENT_H
-#define TCPCLIENT_H
-
 #include <string>
 #include <winsock2.h>
+#ifndef TCPCLIENT_H
+#define TCPCLIENT_H
 
 #pragma comment(lib, "ws2_32.lib") // Линковка библиотеки WinSock
 
@@ -11,6 +10,7 @@ private:
     SOCKET clientSocket; // Сокет клиента
     sockaddr_in serverAddr; // Адрес сервера
 
+    bool isInitialized; //Инициализирован ли сокет
 public:
     TcpClient();
     ~TcpClient();

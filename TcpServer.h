@@ -1,8 +1,8 @@
-#ifndef TCPSERVER_H
-#define TCPSERVER_H
-
 #include <winsock2.h>
 #include <string>
+
+#ifndef TCPSERVER_H
+#define TCPSERVER_H
 
 #pragma comment(lib, "ws2_32.lib") // Линковка библиотеки WinSock
 
@@ -12,7 +12,8 @@ private:
     SOCKET clientSocket; // Сокет клиента
     sockaddr_in serverAddr; // Адрес сервера
     sockaddr_in clientAddr; // Адрес клиента
-
+    
+    bool isInitialized; //Инициализирован ли сокет
 public:
     TcpServer();
     ~TcpServer();
@@ -21,7 +22,7 @@ public:
     bool acceptClient();
     bool sendMessage(const std::string& message);
     std::string receiveMessage();
-    bool check_start();
+    bool check_start() const;
 };
 
 #endif
