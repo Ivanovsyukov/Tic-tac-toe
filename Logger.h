@@ -6,8 +6,6 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-
-
 class Logger {
 public:
     Logger(const std::string &logPrefix); // Конструктор
@@ -17,7 +15,7 @@ public:
 
 private:
     std::ofstream logFile; // Переменная для лог-файла
-    std::string getTimeStamp(); // Вспомогательный метод для временной метки
+    std::string getTimeStamp(); // Вспомогательный метод для создания временной метки
 };
 
 #endif // LOGGER_H

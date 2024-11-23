@@ -34,8 +34,8 @@ bool Tic_tac_toe::check_win(int row, int col, char win){
 }
 
 Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2, bool first_step, TcpServer* server, TcpClient* client, bool type_connection): row_(row), col_(col), len_win_line_(len_win_line), time_per_move_(time_per_move),
-      player_name_1_(player_name_1), player_name_2_(player_name_2), first_step_(first_step),
-      server_(server), client_(client), step_s_player_(first_step), type_connection_(type_connection){
+    player_name_1_(player_name_1), player_name_2_(player_name_2), first_step_(first_step),
+    server_(server), client_(client), step_s_player_(first_step), type_connection_(type_connection){
     globalLogger.log("Game initialized: " + player_name_1 + " vs " + player_name_2);
     game_space_=new char*[row];
     for(size_t k=0; k<row; ++k){
@@ -47,7 +47,7 @@ Tic_tac_toe::Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, 
 }
 
 int Tic_tac_toe::step(int row, int col, bool player_move){
-    if(row<0 || col<0 || game_space_[row][col]!=none_){
+    if(row<0 || col<0 || game_space_[row][col]!=none_){//если поле зянято
         globalLogger.log("Invalid move: row=" + std::to_string(row) + ", col=" + std::to_string(col));
         return 0;//занятое поле
     }
@@ -57,9 +57,9 @@ int Tic_tac_toe::step(int row, int col, bool player_move){
     }else {
         player_char='X';
     }
-    game_space_[row][col]=player_char;
+    game_space_[row][col]=player_char;//вставляем символ хода
     globalLogger.log("Move: player=" + std::string(1, player_char) + ", row=" + std::to_string(row) + ", col=" + std::to_string(col));
-    if(check_win(row, col, player_char)){
+    if(check_win(row, col, player_char)){//проверка на успех
         globalLogger.log("Player " + std::string(1, player_char) + " wins!");
         return 2;//победа
     }
@@ -68,13 +68,13 @@ int Tic_tac_toe::step(int row, int col, bool player_move){
 
 std::string Tic_tac_toe::out_place(){
     std::string out="Player ";
-    if(step_s_player_){
+    if(step_s_player_){//добавляем в вывод на консоль
         out.append(player_name_1_+'\n');
     } else {
         out.append(player_name_2_+'\n');
     }
-    for(int i=0; i<row_; ++i){
-        out.append(std::string(1+2*col_, '_')+'\n');
+    for(int i=0; i<row_; ++i){//добавление поля в вывод
+        out.append(std::string(2*col_-1, '_')+'\n');
         out.push_back('|');
         for(int j=0; j<col_; ++j){
             out.push_back(game_space_[i][j]);
@@ -82,16 +82,16 @@ std::string Tic_tac_toe::out_place(){
         }
         out.push_back('\n');
     }
-    out.append(std::string(1+2*col_, '_')+'\n');
+    out.append(std::string(2*col_-1, '_')+'\n');
     return out;
 }
 
 void Tic_tac_toe::send_move(int row, int col) {
-    std::string move="-,-";
-    globalLogger.log("Sending move: " + move);
+    std::string move="-,-";//если ход пропущен
     if(row>=0 && col>=0){
-        std::string move = std::to_string(row) + "," + std::to_string(col);
+        move = std::to_string(row) + "," + std::to_string(col);//ход есть
     }
+    globalLogger.log("Sending move: " + move);
     if (!type_connection_) {
         server_->sendMessage(move);
     } else if (client_) {
@@ -100,7 +100,7 @@ void Tic_tac_toe::send_move(int row, int col) {
 }
 
 void Tic_tac_toe::receive_move(int& row, int& col) {
-    std::string move;
+    std::string move="";
     if (!type_connection_) {
         move = server_->receiveMessage();
     } else if (client_) {
@@ -121,12 +121,12 @@ void Tic_tac_toe::game() {
     globalLogger.log("Game started");
     int row = 0;
     int col = 0;
-    int res_move = 9;
-    bool yes_input_time = true;
+    int res_move = 9;//для записи результата хода
+    bool yes_input_time = true;//для проверки времени хода
     bool input_complete=false;
     bool play_char=false; //символ хода Х или О.
-    std::string input=" ";
-
+    std::string input="";
+    //выводим информацию о порядке игроков
     if (first_step_) {
         std::cout << "First player is " << player_name_2_ << std::endl;
         std::cout << "Second player is " << player_name_1_ << std::endl;
@@ -144,7 +144,6 @@ void Tic_tac_toe::game() {
                 yes_input_time = true;
                 input_complete=false;
                 auto start = std::chrono::steady_clock::now();
-
                 // Запускаем ввод игрока в отдельном потоке
                 globalLogger.log("Create new threat");
                 std::thread input_thread([&]() {
@@ -156,7 +155,6 @@ void Tic_tac_toe::game() {
                     std::cin >> row >> col;
                     input_complete=true;
                 });
-
                 // Отслеживаем время на ввод, пока поток не завершится
                 while (!input_complete && yes_input_time) {
                     auto now = std::chrono::steady_clock::now();
@@ -169,7 +167,6 @@ void Tic_tac_toe::game() {
                     }
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
-
                 // Если время истекло, завершаем поток, иначе ожидаем завершения ввода
                 if (input_thread.joinable()) {
                     globalLogger.log("Close threat");
@@ -180,7 +177,6 @@ void Tic_tac_toe::game() {
                         input_thread.detach(); // Завершаем поток без ожидания завершения
                     }
                 }
-
                 // Обработка результата хода
                 globalLogger.log("Work with turn");
                 if (yes_input_time) {
@@ -197,29 +193,24 @@ void Tic_tac_toe::game() {
             } while (res_move == 0 && yes_input_time);
         } else {//ход игрока, ожидающего хода
             globalLogger.log("Player step of reading");
-            //чтение хода (row, col, resmove)
+            //чтение хода 
             globalLogger.log("Read turn");
             receive_move(row, col);
             if (row != -1 && col != -1) {
                 globalLogger.log("It is turn");
-                step(row, col, play_char);
+                res_move=step(row, col, play_char);//тут мы уверены, что проблем нет
             } else {
                 globalLogger.log("Opponent missed their turn.");
                 std::cout << "Opponent missed their turn." << std::endl;
             }
             globalLogger.log("Add in game_space");
-            if(play_char){
-                game_space_[row][col]='O';
-            } else {
-                game_space_[row][col]='X';
-            }
         }
         // Вывод текущего состояния поля
         globalLogger.log("Console out game_space");
-        std::cout << out_place() << std::endl;
+        std::cout << out_place() << std::endl;//выводим поле в консоль
         globalLogger.log("Change step_s_player and play_char");
         step_s_player_ = !step_s_player_; // Меняем игрока
-        play_char=!play_char;
+        play_char=!play_char;//меняем символ с крестика на нолик и наоборот
     }
 
     // Проверка на победу или ничью

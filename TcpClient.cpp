@@ -48,6 +48,7 @@ bool TcpClient::connectToServer(const std::string& ipAddress, int port){
 
 bool TcpClient::sendMessage(const std::string& message){
     if (!isInitialized) return false;
+    //отправление сообщения
     if (send(clientSocket, message.c_str(), message.length(), 0) == SOCKET_ERROR) {
         globalLogger.log("Failed to send message!");
         return false;
@@ -59,13 +60,13 @@ bool TcpClient::sendMessage(const std::string& message){
 std::string TcpClient::receiveMessage(){
     if (!isInitialized) return "";
     char buffer[1024];
-    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);//запись в buffer, а длину сообщения в bytesReceived
     if (bytesReceived <= 0){
         globalLogger.log("Bad read message!");
         return ""; // Соединение закрыто или ошибка
     }
     globalLogger.log("Good read message!");
-    return std::string(buffer, bytesReceived);
+    return std::string(buffer, bytesReceived);//выводим строку из буфера по длине полученного сообщения
 }
 
 bool TcpClient::check_start(){

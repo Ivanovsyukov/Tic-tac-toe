@@ -2,7 +2,7 @@
 #имя игрока
 username: user1
 #есть два типа пользователей server, который создает игру; client, который присоединяется к игре.
-type: player
+type: client
 #размер поля
 row_count: 3
 col_count: 3

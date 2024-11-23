@@ -18,11 +18,11 @@ public:
     TcpServer();
     ~TcpServer();
 
-    bool startServer(int port);
-    bool acceptClient();
-    bool sendMessage(const std::string& message);
-    std::string receiveMessage();
-    bool check_start() const;
+    bool startServer(int port);//Работа с серверным сокетом
+    bool acceptClient();//подключение клиента, создание сокета клиента
+    bool sendMessage(const std::string& message);//отправка сообщения
+    std::string receiveMessage();//получение сообщения
+    bool check_start() const;//проверка инициализации сокета в конструкторе
 };
 
 #endif

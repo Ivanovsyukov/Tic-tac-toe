@@ -15,10 +15,10 @@ public:
     TcpClient();
     ~TcpClient();
 
-    bool connectToServer(const std::string& ipAddress, int port);
-    bool sendMessage(const std::string& message);
-    std::string receiveMessage();
-    bool check_start();
+    bool connectToServer(const std::string& ipAddress, int port);//соединение с сервером
+    bool sendMessage(const std::string& message);//отправление сообщений
+    std::string receiveMessage();//получение сообщения
+    bool check_start();//смогли ли инициализоват сокет
 };
 
 #endif

@@ -3,7 +3,7 @@
 
 #include "Logger.h"
 
-// Экземпляр общего логгера
+// Экземпляр лог-файла, общего для всех частей программы
 extern Logger globalLogger;
 
 #endif // GLOBAL_LOGGER_H
