@@ -1,6 +1,5 @@
 #include "TcpServer.h"
 #include "Global_logger.h"
-#include <iostream>
 
 TcpServer::TcpServer(): serverSocket(INVALID_SOCKET), clientSocket(INVALID_SOCKET), isInitialized(false){
     // Инициализация WinSock

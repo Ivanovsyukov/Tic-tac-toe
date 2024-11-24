@@ -6,6 +6,8 @@
 #include <thread>
 #include <chrono>
 #include "Global_logger.h"
+#include "TcpServer.h"
+#include "TcpClient.h"
 
 class Tic_tac_toe{
     const char one_char_='X';
@@ -32,7 +34,7 @@ class Tic_tac_toe{
     bool send_move(int row, int col);//отправка хода
     bool receive_move(int& row, int& col);//получение хода
 public:
-    Tic_tac_toe(int row=3, int col=3, int len_win_line=3, int time_per_move=30, std::string player_name_1="1", std::string player_name_2="2", bool first_step, TcpServer* server, TcpClient* client, bool type_connection);
+    Tic_tac_toe(int row, int col, int len_win_line, int time_per_move, std::string player_name_1, std::string player_name_2, bool first_step, TcpServer* server, TcpClient* client, bool type_connection);
     void game();
     ~Tic_tac_toe();
 };

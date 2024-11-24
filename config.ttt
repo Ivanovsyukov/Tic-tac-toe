@@ -2,7 +2,7 @@
 #имя игрока
 username: user1
 #есть два типа пользователей server, который создает игру; client, который присоединяется к игре.
-type: client
+type: server
 #размер поля
 row_count: 3
 col_count: 3
@@ -10,5 +10,5 @@ win_line_len: 3
 # время в секундах
 step_time: 60
 #сетевая информация
-port:1024
+port:8080
 ip:127.0.0.1

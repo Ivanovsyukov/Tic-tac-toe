@@ -24,7 +24,7 @@ Logger::Logger(const std::string &logPrefix) {
 
 Logger::~Logger(){
     if (logFile.is_open()) {
-        logFile << "Log closed.\n";
+        logFile << "[" << getTimeStamp() << "] " << "Log closed.\n";
         logFile.close();
     }
 }

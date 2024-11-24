@@ -92,7 +92,7 @@ int main(){
             my_col=std::atoi(((*pos).second).c_str());
         } else if((*pos).first=="win_line_len"){
             my_len_win_line=std::atoi(((*pos).second).c_str());
-        } else if((*pos).first=="my_step_time"){
+        } else if((*pos).first=="step_time"){
             my_step_time=std::atoi(((*pos).second).c_str());
         } else if((*pos).first=="port"){
             port=std::atoi(((*pos).second).c_str());
@@ -146,9 +146,16 @@ int main(){
             server->sendMessage("wr");
             delete server;
             return -5;
+        } else if(other_password.empty()){
+            delete server;
+            return -8;
         }
         //Получение параметров поля и времени клиента для проверки
-        std::string client_answer=(server->receiveMessage());
+        std::string client_answer=server->receiveMessage();
+        if(client_answer.empty()){
+            delete server;
+            return -8;
+        }
         char div_char[3]={'_', '|', '^'};
         size_t first_div=0;
         size_t second_div=0;
@@ -173,18 +180,34 @@ int main(){
 
         if(my_row!=other_row || my_col!=other_col || my_len_win_line!=other_len_win_line || my_step_time!=other_step_time){
             globalLogger.log("Main client's parametrs is wrong. Disconnecting client.");
-            server->sendMessage("wr");
+            send_check=server->sendMessage("wr");
+            if(!send_check){
+                delete server;
+                return -8;
+            }
             delete server;
             return -6;
         }
         playername_2 = server->receiveMessage(); // Получаем имя клиента
+        if(playername_2.empty()){
+            delete server;
+            return -8;
+        }
         globalLogger.log("Read client name");
-        server->sendMessage(playername_1);      // Отправляем свое имя
+        send_check=server->sendMessage(playername_1);      // Отправляем свое имя
+        if(!send_check){
+            delete server;
+            return -8;
+        }
         globalLogger.log("Send our name");
         // Определение очередности хода
         srand(static_cast<unsigned>(time(0))); // Инициализация генератора случайных чисел
         first_step = (rand() % 2 == 0); // Случайное определение очередности
-        server->sendMessage(first_step ? "1" : "0"); // Отправляем очередность
+        send_check=server->sendMessage(first_step ? "1" : "0"); // Отправляем очередность
+        if(!send_check){
+            delete server;
+            return -8;
+        }
         globalLogger.log("Choose and send first_step");
         globalLogger.log("Server setup complete.");
     } else if(type_person=="client"){// Логика клиента

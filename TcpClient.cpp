@@ -1,6 +1,5 @@
 #include "TcpClient.h"
 #include "Global_logger.h"
-#include <iostream>
 
 TcpClient::TcpClient():isInitialized(false){
     // Инициализация WinSock

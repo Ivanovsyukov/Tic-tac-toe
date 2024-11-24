@@ -1,6 +1,4 @@
 #include "game.h"
-#include "TcpServer.h"
-#include "TcpClient.h"
 
 int Tic_tac_toe::count_char_on_line_(int row, int col, char search, int row_change, int col_change) const{
     int count=0;
