@@ -144,11 +144,21 @@ int main(){
         if(my_password!=other_password){
             globalLogger.log("Password mismatch. Disconnecting client.");
             server->sendMessage("wr");
+            if(!send_check){
+                delete server;
+                return -8;
+            }
             delete server;
             return -5;
         } else if(other_password.empty()){
             delete server;
             return -8;
+        } else {
+            server->sendMessage("rr");
+            if(!send_check){
+                delete server;
+                return -8;
+            }
         }
         //Получение параметров поля и времени клиента для проверки
         std::string client_answer=server->receiveMessage();
@@ -187,6 +197,12 @@ int main(){
             }
             delete server;
             return -6;
+        } else {
+            server->sendMessage("wr");
+            if(!send_check){
+                delete server;
+                return -8;
+            }
         }
         playername_2 = server->receiveMessage(); // Получаем имя клиента
         if(playername_2.empty()){
