@@ -65,6 +65,7 @@ bool TcpServer::acceptClient(){
 
 bool TcpServer::sendMessage(const std::string& message) {
     if (!isInitialized) return false;
+    globalLogger.log("Send answer");
     if (send(clientSocket, message.c_str(), message.length(), 0) == SOCKET_ERROR){
         globalLogger.log("Failed to send message!");
         return false;
@@ -75,6 +76,7 @@ bool TcpServer::sendMessage(const std::string& message) {
 
 std::string TcpServer::receiveMessage(){
     if (!isInitialized) return "";
+    globalLogger.log("Waiting for a response");
     char buffer[1024];
     int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
     if (bytesReceived <= 0){
