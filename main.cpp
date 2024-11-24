@@ -79,6 +79,7 @@ int main(){
     bool first_step = false;//для хранения данных о том, кто ходит первым(0 - сервер, 1 - клиент)
     bool type_connection=false;//тип игрока в соединении 0 - сервер, 1 - клиент.
     bool connection_check=false;//для проверок соединения
+    bool send_check=true;//проверка получения сообщений
     //распределение параметров по переменноым, заданным ранее
     for(auto pos=config.begin(); pos!=config.end(); ++pos){
         if((*pos).first=="username"){
@@ -204,29 +205,56 @@ int main(){
             return -2;
         }
 
-        client->sendMessage(my_password);
+        send_check=client->sendMessage(my_password);
+        if(!send_check){
+            delete client;
+            return -7;
+        }
         server_answer = client->receiveMessage();
         if(client->receiveMessage()=="wr"){
             globalLogger.log("Password wrong. Disconect");
             delete client;
             return -5;
+        } else if(server_answer.empty()){
+            delete client;
+            return -8;
         }
         //отправка параметров поля и времени на ход для сверки
-        client->sendMessage(std::to_string(my_row)+"_"+std::to_string(my_col)+"|"+std::to_string(my_len_win_line)+"^"+std::to_string(my_step_time));
+        send_check=client->sendMessage(std::to_string(my_row)+"_"+std::to_string(my_col)+"|"+std::to_string(my_len_win_line)+"^"+std::to_string(my_step_time));
+        if(!send_check){
+            delete client;
+            return -7;
+        }
         server_answer = client->receiveMessage();
         if(client->receiveMessage()=="wr"){
             globalLogger.log("Main parametrs wrong. Disconect");
             delete client;
             return -6;
+        } else if(server_answer.empty()){
+            delete client;
+            return -8;
         }
         // Отправляем свое имя серверу
-        client->sendMessage(playername_1);
+        send_check=client->sendMessage(playername_1);
+        if(!send_check){
+            delete client;
+            return -7;
+        }
         globalLogger.log("Send client name");
         playername_2 = client->receiveMessage(); // Получаем имя сервера
+        if(playername_2.empty()){
+            delete client;
+            return -8;
+        }
         globalLogger.log("Read server name");
 
         // Получение очередности хода
-        first_step = (client->receiveMessage() == "1");
+        std::string first_step_answer=client->receiveMessage();
+        if(first_step_answer.empty()){
+            delete client;
+            return -8;
+        }
+        first_step = (first_step_answer == "1");
         globalLogger.log("write first_step");
         globalLogger.log("Client setup complete.");
     } else {
@@ -237,11 +265,8 @@ int main(){
     Tic_tac_toe mainest(my_row, my_col, my_len_win_line, my_step_time, playername_1, playername_2, first_step, server, client, type_connection);
     mainest.game();
     globalLogger.log("Game ended.");
-    if(!type_connection){
-        delete server;
-    } else {
-        delete client;
-    }
+    delete server;
+    delete client;
     globalLogger.log("Program ended.");
     return 0;
 }

@@ -2,7 +2,7 @@
 #include "TcpServer.h"
 #include "TcpClient.h"
 
-int Tic_tac_toe::count_char_on_line_(int row, int col, char search, int row_change, int col_change){
+int Tic_tac_toe::count_char_on_line_(int row, int col, char search, int row_change, int col_change) const{
     int count=0;
     bool end=false;
     int j=col;
@@ -16,7 +16,7 @@ int Tic_tac_toe::count_char_on_line_(int row, int col, char search, int row_chan
     return count;
 }
 
-bool Tic_tac_toe::check_win(int row, int col, char win){
+bool Tic_tac_toe::check_win(int row, int col, char win) const{
     int count=0;
     for(int i=0; i<=1; ++i){
         for(int j=0; j<=1; ++j){
@@ -66,7 +66,7 @@ int Tic_tac_toe::step(int row, int col, bool player_move){
     return 1;//ход проведен успешно
 }
 
-std::string Tic_tac_toe::out_place(){
+std::string Tic_tac_toe::out_place()const{
     std::string out="Player ";
     if(step_s_player_){//добавляем в вывод на консоль
         out.append(player_name_1_+'\n');
@@ -86,25 +86,30 @@ std::string Tic_tac_toe::out_place(){
     return out;
 }
 
-void Tic_tac_toe::send_move(int row, int col) {
+bool Tic_tac_toe::send_move(int row, int col){
     std::string move="-,-";//если ход пропущен
     if(row>=0 && col>=0){
         move = std::to_string(row) + "," + std::to_string(col);//ход есть
     }
     globalLogger.log("Sending move: " + move);
+    bool check_send=true;//проверка на отправление
     if (!type_connection_) {
-        server_->sendMessage(move);
+        check_send=server_->sendMessage(move);
     } else if (client_) {
-        client_->sendMessage(move);
+        check_send=client_->sendMessage(move);
     }
+    return check_send;
 }
 
-void Tic_tac_toe::receive_move(int& row, int& col) {
+bool Tic_tac_toe::receive_move(int& row, int& col) {
     std::string move="";
     if (!type_connection_) {
         move = server_->receiveMessage();
     } else if (client_) {
         move = client_->receiveMessage();
+    }
+    if(move.empty()){
+        return false;
     }
     globalLogger.log("Received move: " + move);
     if (move == "-,-") {
@@ -115,6 +120,7 @@ void Tic_tac_toe::receive_move(int& row, int& col) {
         row = std::stoi(move.substr(0, delimiter));
         col = std::stoi(move.substr(delimiter + 1));
     }
+    return true;
 }
 
 void Tic_tac_toe::game() {
@@ -125,6 +131,7 @@ void Tic_tac_toe::game() {
     bool yes_input_time = true;//для проверки времени хода
     bool input_complete=false;
     bool play_char=false; //символ хода Х или О.
+    bool tcp_error=false;//ошибка в сети
     std::string input="";
     //выводим информацию о порядке игроков
     if (first_step_) {
@@ -135,7 +142,7 @@ void Tic_tac_toe::game() {
         std::cout << "Second player is " << player_name_2_ << std::endl;
     }
 
-    for (size_t i = 0; i < (size_t(row_) * size_t(col_)) && res_move != 2; ++i) {
+    for (size_t i = 0; i < (size_t(row_) * size_t(col_)) && res_move != 2 && !tcp_error; ++i) {
         if(!step_s_player_){//ход игрока, исполняющего ход
             globalLogger.log("Player step of doing");
             res_move = 1;
@@ -184,18 +191,29 @@ void Tic_tac_toe::game() {
                     res_move = step(row, col, play_char);
                     if(res_move!=0){
                         globalLogger.log("Before send turn");
-                        send_move(row, col);
+                        if(!send_move(row, col)){
+                            tcp_error=true;
+                            res_move=-1;
+                        }
                     }
                 } else {
                     globalLogger.log("Send time out");
-                    send_move(-1, -1);
+                    if(!send_move(-1, -1)){
+                        tcp_error=true;
+                        res_move=-1;
+                        continue;
+                    }
                 }
             } while (res_move == 0 && yes_input_time);
         } else {//ход игрока, ожидающего хода
             globalLogger.log("Player step of reading");
             //чтение хода 
             globalLogger.log("Read turn");
-            receive_move(row, col);
+            if(!receive_move(row, col)){
+                tcp_error=true;
+                res_move=-1;
+                continue;
+            }
             if (row != -1 && col != -1) {
                 globalLogger.log("It is turn");
                 res_move=step(row, col, play_char);//тут мы уверены, что проблем нет
@@ -217,8 +235,7 @@ void Tic_tac_toe::game() {
     if (res_move == 1) {
         globalLogger.log("Game ended: Draw");
         std::cout << "No winner" << std::endl;
-    } else {
-        
+    } else if (res_move == 2){
         std::cout << "Player ";
         if (!step_s_player_) {
             std::cout << player_name_1_ << " is winner" << std::endl;
@@ -226,6 +243,8 @@ void Tic_tac_toe::game() {
             std::cout << player_name_2_ << " is winner" << std::endl;
         }
         globalLogger.log("Game ended with winner");
+    } else {
+        globalLogger.log("Game ended with error");
     }
 }
 

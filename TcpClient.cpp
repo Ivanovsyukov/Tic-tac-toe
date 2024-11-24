@@ -2,7 +2,7 @@
 #include "Global_logger.h"
 #include <iostream>
 
-TcpClient::TcpClient():clientSocket(INVALID_SOCKET), isInitialized(false){
+TcpClient::TcpClient():isInitialized(false){
     // Инициализация WinSock
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -50,7 +50,7 @@ bool TcpClient::sendMessage(const std::string& message){
     if (!isInitialized) return false;
     //отправление сообщения
     if (send(clientSocket, message.c_str(), message.length(), 0) == SOCKET_ERROR) {
-        globalLogger.log("Failed to send message!");
+        globalLogger.log("Failed to send message!:"+std::string(strerror(errno)));
         return false;
     }
     globalLogger.log("Good send message!");
@@ -62,7 +62,7 @@ std::string TcpClient::receiveMessage(){
     char buffer[1024];
     int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);//запись в buffer, а длину сообщения в bytesReceived
     if (bytesReceived <= 0){
-        globalLogger.log("Bad read message!");
+        globalLogger.log("Bad read message!:"+std::string(strerror(errno)));
         return ""; // Соединение закрыто или ошибка
     }
     globalLogger.log("Good read message!");
